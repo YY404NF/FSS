@@ -7,9 +7,9 @@ LIBS := -lcuda -lcudart -lcurand
 UTIL_FILES := $(CURDIR)/gpu/gpu_mem.cu
 INCLUDES := -I '$(CURDIR)'
 
-.PHONY: all dcf dpf dcf_batch dpf_batch clean
+.PHONY: all dcf dpf dcf_benchmark dpf_benchmark clean
 
-all: dpf dcf dpf_batch dcf_batch
+all: dpf dcf dpf_benchmark dcf_benchmark
 
 dpf: dpf.cu
 	$(CXX) $(FLAGS) $(INCLUDES) $^ $(UTIL_FILES) $(LIBS) -o dpf
@@ -17,11 +17,11 @@ dpf: dpf.cu
 dcf: dcf.cu
 	$(CXX) $(FLAGS) $(INCLUDES) $^ $(UTIL_FILES) $(LIBS) -o dcf
 
-dpf_batch: dpf_batch.cu
-	$(CXX) $(FLAGS) $(INCLUDES) $^ $(UTIL_FILES) $(LIBS) -o dpf_batch
+dpf_benchmark: dpf_benchmark.cu
+	$(CXX) $(FLAGS) $(INCLUDES) $^ $(UTIL_FILES) $(LIBS) -o dpf_benchmark
 
-dcf_batch: dcf_batch.cu
-	$(CXX) $(FLAGS) $(INCLUDES) $^ $(UTIL_FILES) $(LIBS) -o dcf_batch
+dcf_benchmark: dcf_benchmark.cu
+	$(CXX) $(FLAGS) $(INCLUDES) $^ $(UTIL_FILES) $(LIBS) -o dcf_benchmark
 
 clean:
-	rm -f dpf dcf dpf_batch dcf_batch
+	rm -f dpf dcf dpf_benchmark dcf_benchmark dpf_batch dcf_batch

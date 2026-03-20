@@ -4,40 +4,33 @@
 #include <cstdlib>
 #include <vector>
 
-#include "fss/dcf_api.h"
+#include "fss/dpf_api.h"
 #include "gpu/gpu_stats.h"
 
 using T = u64;
 
 static void printUsage(const char *prog)
 {
-    std::fprintf(stderr, "Usage: %s <bin> <bout> <n>\n", prog);
+    std::fprintf(stderr, "Usage: %s <bin> <n>\n", prog);
 }
 
 static std::vector<T> buildRin(int bin, int n)
 {
-    // 构造一组稳定、可复现的阈值输入，避免每次运行都依赖额外随机源
+    // 构造一组稳定、可复现的输入点，避免每次运行都依赖额外随机源
     std::vector<T> rin(n);
     const T limit = (bin == 64) ? ~T(0) : (T(1) << bin);
     for (int i = 0; i < n; ++i)
-        rin[i] = T(20) + T(2) * i;
+        rin[i] = T(10) + T(2) * i;
     assert(rin.empty() || rin.back() < limit);
     return rin;
 }
 
 static std::vector<T> buildQueries(const std::vector<T> &rin)
 {
-    // 构造查询输入：覆盖等于、小于和大于阈值三类情况，便于做批量性能测试
+    // 构造查询输入：一部分位置命中目标点，其余位置偏移 1，便于覆盖命中/未命中两类情况
     std::vector<T> x(rin.size());
     for (std::size_t i = 0; i < rin.size(); ++i)
-    {
-        if (i % 4 == 0)
-            x[i] = rin[i];
-        else if (i % 4 == 1)
-            x[i] = rin[i] - 1;
-        else
-            x[i] = rin[i] + 1;
-    }
+        x[i] = (i % 3 == 0) ? rin[i] : (rin[i] + 1);
     return x;
 }
 
@@ -51,16 +44,15 @@ static unsigned long long microsBetween(
 
 int main(int argc, char **argv)
 {
-    if (argc != 4)
+    if (argc != 3)
     {
         printUsage(argv[0]);
         return 1;
     }
 
     const int bin = std::atoi(argv[1]);
-    const int bout = std::atoi(argv[2]);
-    const int n = std::atoi(argv[3]);
-    if (bin <= 0 || bin > 64 || bout <= 0 || bout > 64 || n <= 0)
+    const int n = std::atoi(argv[2]);
+    if (bin <= 0 || bin > 64 || n <= 0)
     {
         printUsage(argv[0]);
         return 1;
@@ -73,35 +65,34 @@ int main(int argc, char **argv)
     // 总耗时
     const auto totalStart = std::chrono::high_resolution_clock::now();
 
-    // 两方 DCF key 一次性生成耗时
+    // 两方 DPF key 一次性生成耗时
     const auto keygenStart = std::chrono::high_resolution_clock::now();
-    auto [dcfKey0, dcfKey1] = gpu_mpc::standalone::generateDcfKeys(runtime, bin, bout, rin, T(1), true);
+    auto [dpfKey0, dpfKey1] = gpu_mpc::standalone::generateDpfKeys(runtime, bin, rin);
     const auto keygenEnd = std::chrono::high_resolution_clock::now();
 
     // 统计 SERVER0 求值阶段的总耗时与传输耗时
     Stats p0Stats;
     const auto evalP0Start = std::chrono::high_resolution_clock::now();
-    auto dcfShare0 = gpu_mpc::standalone::unpackPackedOutput(
-        gpu_mpc::standalone::evalDcf(runtime, dcfKey0, SERVER0, x, &p0Stats),
+    auto dpfShare0 = gpu_mpc::standalone::unpackPackedOutput(
+        gpu_mpc::standalone::evalDpf(runtime, dpfKey0, SERVER0, x, &p0Stats),
         n,
-        bout);
+        1);
     const auto evalP0End = std::chrono::high_resolution_clock::now();
 
     // 统计 SERVER1 求值阶段的总耗时与传输耗时
     Stats p1Stats;
     const auto evalP1Start = std::chrono::high_resolution_clock::now();
-    auto dcfShare1 = gpu_mpc::standalone::unpackPackedOutput(
-        gpu_mpc::standalone::evalDcf(runtime, dcfKey1, SERVER1, x, &p1Stats),
+    auto dpfShare1 = gpu_mpc::standalone::unpackPackedOutput(
+        gpu_mpc::standalone::evalDpf(runtime, dpfKey1, SERVER1, x, &p1Stats),
         n,
-        bout);
+        1);
     const auto evalP1End = std::chrono::high_resolution_clock::now();
 
     const auto totalEnd = std::chrono::high_resolution_clock::now();
 
     std::printf(
-        "DCF batch finished\n"
+        "DPF benchmark finished\n"
         "  bin: %d bit\n"
-        "  bout: %d bit\n"
         "  n: %d elem\n"
         "  keygen: %llu us\n"
         "  eval_p0: %llu us\n"
@@ -110,7 +101,6 @@ int main(int argc, char **argv)
         "  transfer_p1: %llu us\n"
         "  total: %llu us\n",
         bin,
-        bout,
         n,
         microsBetween(keygenStart, keygenEnd),
         microsBetween(evalP0Start, evalP0End),

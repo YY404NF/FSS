@@ -5,6 +5,30 @@
 - CUDA 基础环境
 - `nvcc`、`libcuda`、`libcudart`、`libcurand`
 
+## 环境配置
+
+如果是在一台干净的 Ubuntu 22.04 / 24.04 `amd64` 服务器上，可以直接在项目目录执行：
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+脚本会自动检测 NVIDIA 驱动；如果没有检测到可用驱动，会自动安装。
+
+如果你想手动控制这个行为，可以这样执行：
+
+```bash
+INSTALL_DRIVER=1 ./setup.sh   # 强制安装/重装驱动
+INSTALL_DRIVER=0 ./setup.sh   # 跳过驱动安装
+```
+
+脚本执行完成后，加载环境变量：
+
+```bash
+source .env.cuda
+```
+
 ## 构建
 
 先设置环境变量：
@@ -20,7 +44,7 @@ export GPU_ARCH=86
 make all
 ```
 
-单独编译：
+单独编译与运行：
 
 ```bash
 make dpf CUDA_VERSION=$CUDA_VERSION GPU_ARCH=$GPU_ARCH

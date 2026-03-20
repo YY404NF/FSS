@@ -1,6 +1,6 @@
-# DCF/DPF Extraction Work
+# DCF/DPF Minimal Runtime
 
-这个目录专门放 DCF/DPF 剥离实验代码，不改动原项目入口。
+这个仓库现在直接承载 DCF/DPF 的最小可运行集合，已经不再依赖 `GPU-MPC` 仓库中的其他源码目录。
 
 ## 文件
 
@@ -8,41 +8,43 @@
 - `dcf.cu`: DCF 最小示例
 - `dpf_batch.cu`: DPF 运行时参数测试，输出 keygen/eval/transfer/total 耗时字段
 - `dcf_batch.cu`: DCF 运行时参数测试，输出 keygen/eval/transfer/total 耗时字段
-- `Makefile`: 仅用于这个工作目录下的示例构建
+- `Makefile`: 当前根目录下的构建入口
 - `工作进度.md`: 剥离计划、阶段进展、后续任务
 - `fss/`: 当前已剥离进本目录的 FSS 相关代码
 - `gpu/`: 当前已剥离进本目录的 GPU 基础设施代码
 - `aes/`: 当前已剥离进本目录的 AES backend 代码
+- `runtime/`: 独立运行时封装
 
 ## 构建
 
 先设置环境变量：
 
 ```bash
-export CUDA_VERSION=11.7
+export CUDA_VERSION=13.1
 export GPU_ARCH=86
 ```
 
 然后在仓库根目录执行：
 
 ```bash
-make -C 剥离工作 dpf
-./剥离工作/dpf
+make dpf CUDA_VERSION=$CUDA_VERSION GPU_ARCH=$GPU_ARCH
+./dpf
 
-make -C 剥离工作 dcf
-./剥离工作/dcf
+make dcf CUDA_VERSION=$CUDA_VERSION GPU_ARCH=$GPU_ARCH
+./dcf
 
-make -C 剥离工作 dpf_batch
-./剥离工作/dpf_batch 64 10000000
+make dpf_batch CUDA_VERSION=$CUDA_VERSION GPU_ARCH=$GPU_ARCH
+./dpf_batch 64 10000000
 
-make -C 剥离工作 dcf_batch
-./剥离工作/dcf_batch 64 1 10000000
+make dcf_batch CUDA_VERSION=$CUDA_VERSION GPU_ARCH=$GPU_ARCH
+./dcf_batch 64 1 10000000
 ```
 
 当前构建已经压缩到只依赖：
 
-- `剥离工作/` 内源码
+- 当前仓库内源码
 - CUDA 基础环境
+- `nvcc`、`libcuda`、`libcudart`、`libcurand`
 
 当前工作目标仍然是继续清理 `fss/` 和 `gpu/` 中未使用的历史残留，进一步逼近最小可运行集合。
 
@@ -78,6 +80,24 @@ make -C 剥离工作 dcf_batch
   - `gpu/helper_string.h`
   - `gpu/curand_utils.h`
   - `gpu/misc_utils.h`
+  - `gpu/packing_utils.h`
   - `aes/gpu_aes_shm.h`
   - `aes/gpu_aes_shm.cu`
   - `aes/gpu_aes_table.h`
+
+## 输出字段
+
+`dpf_batch` 输出：
+
+- `bin`: 输入位宽，单位 `bit`
+- `n`: 批大小，单位 `elem`
+- `keygen`: 生成两方密钥耗时，单位 `us`
+- `eval_p0`: P0 评估耗时，单位 `us`
+- `eval_p1`: P1 评估耗时，单位 `us`
+- `transfer_p0`: P0 结果拷回主机耗时，单位 `us`
+- `transfer_p1`: P1 结果拷回主机耗时，单位 `us`
+- `total`: 整体流程耗时，单位 `us`
+
+`dcf_batch` 在上述字段基础上额外输出：
+
+- `bout`: 输出位宽，单位 `bit`

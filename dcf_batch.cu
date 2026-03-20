@@ -1,4 +1,3 @@
-/* DCF 运行时参数批量入口：负责按 bin/bout/n 生成测试数据并输出完整耗时字段。 */
 #include <cassert>
 #include <chrono>
 #include <cstdio>
@@ -17,7 +16,7 @@ static void printUsage(const char *prog)
 
 static std::vector<T> buildRin(int bin, int n)
 {
-    // 构造一组稳定、可复现的阈值输入，避免每次运行都依赖额外随机源。
+    // 构造一组稳定、可复现的阈值输入，避免每次运行都依赖额外随机源
     std::vector<T> rin(n);
     const T limit = (bin == 64) ? ~T(0) : (T(1) << bin);
     for (int i = 0; i < n; ++i)
@@ -28,7 +27,7 @@ static std::vector<T> buildRin(int bin, int n)
 
 static std::vector<T> buildQueries(const std::vector<T> &rin)
 {
-    // 构造查询输入：覆盖等于、小于和大于阈值三类情况，便于做批量性能测试。
+    // 构造查询输入：覆盖等于、小于和大于阈值三类情况，便于做批量性能测试
     std::vector<T> x(rin.size());
     for (std::size_t i = 0; i < rin.size(); ++i)
     {
@@ -71,15 +70,15 @@ int main(int argc, char **argv)
     auto rin = buildRin(bin, n);
     auto x = buildQueries(rin);
 
-    // total_us 覆盖整次批量测试入口的总耗时。
+    // 总耗时
     const auto totalStart = std::chrono::high_resolution_clock::now();
 
-    // keygen_us 统计两方 DCF key 一次性生成耗时。
+    // 两方 DCF key 一次性生成耗时
     const auto keygenStart = std::chrono::high_resolution_clock::now();
     auto [dcfKey0, dcfKey1] = gpu_mpc::standalone::generateDcfKeys(runtime, bin, bout, rin, T(1), true);
     const auto keygenEnd = std::chrono::high_resolution_clock::now();
 
-    // eval_p0_us / transfer_p0_us 统计 SERVER0 求值阶段的总耗时与传输耗时。
+    // 统计 SERVER0 求值阶段的总耗时与传输耗时
     Stats p0Stats;
     const auto evalP0Start = std::chrono::high_resolution_clock::now();
     auto dcfShare0 = gpu_mpc::standalone::unpackPackedOutput(
@@ -88,7 +87,7 @@ int main(int argc, char **argv)
         bout);
     const auto evalP0End = std::chrono::high_resolution_clock::now();
 
-    // eval_p1_us / transfer_p1_us 统计 SERVER1 求值阶段的总耗时与传输耗时。
+    // 统计 SERVER1 求值阶段的总耗时与传输耗时
     Stats p1Stats;
     const auto evalP1Start = std::chrono::high_resolution_clock::now();
     auto dcfShare1 = gpu_mpc::standalone::unpackPackedOutput(
@@ -99,7 +98,6 @@ int main(int argc, char **argv)
 
     const auto totalEnd = std::chrono::high_resolution_clock::now();
 
-    // 这里不再打印样例输出，只输出性能字段，便于脚本化记录和后处理。
     std::printf(
         "DCF batch finished\n"
         "  bin: %d bit\n"

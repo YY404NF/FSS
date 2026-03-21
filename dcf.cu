@@ -17,7 +17,7 @@ int main()
     const std::vector<T> x = {2, 12, 11, 1};
 
     // 生成两方 DCF 密钥。这里配置为 bout=1、payload=1、leq=true
-    // 对应当前最常用的“比较/阈值判断”路径
+    // 因此最终语义是 x[i] <= rin[i]
     auto [dcfKey0, dcfKey1] = gpu_mpc::standalone::generateDcfKeys(runtime, 9, 1, rin, T(1), true);
 
     // 分别执行两方求值，再把打包输出还原成逐元素结果
@@ -30,11 +30,11 @@ int main()
         static_cast<int>(x.size()),
         1);
 
-    // DCF 的最终输出由两方 share 合并得到；这里验证语义是否等于 x[i] < rin[i]
+    // DCF 的最终输出由两方 share 合并得到；这里验证语义是否等于 x[i] <= rin[i]
     for (std::size_t i = 0; i < x.size(); ++i)
     {
         const auto lessThanValue = (dcfShare0[i] + dcfShare1[i]) & 1ULL;
-        const auto expected = static_cast<u64>(x[i] < rin[i]);
+        const auto expected = static_cast<u64>(x[i] <= rin[i]);
         std::printf("DCF[%zu] = %llu (expected %llu)\n", i, lessThanValue, expected);
         assert(lessThanValue == expected);
     }

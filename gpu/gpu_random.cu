@@ -17,6 +17,12 @@
 curandGenerator_t gpuGen[2];
 curandOrdering_t order = CURAND_ORDERING_PSEUDO_BEST;
 
+namespace
+{
+constexpr unsigned long long kGpuRandomOffset = 0ULL;
+constexpr unsigned long long kGpuRandomSeed = 12345ULL;
+}
+
 template <typename T>
 __global__ void randomModKernel(u64 n, T *d_data, int bw)
 {
@@ -59,14 +65,22 @@ AESBlock *randomAESBlockOnGpu(const int n)
 void initGPURandomness()
 {
   // 当前最小集合固定使用 XORWOW + 固定 seed，便于稳定复现。
-  const unsigned long long offset = 0ULL;
-  const unsigned long long seed = 12345ULL;
   int device;
   checkCudaErrors(cudaGetDevice(&device));
   CURAND_CHECK(curandCreateGenerator(&(gpuGen[device]), CURAND_RNG_PSEUDO_XORWOW));
-  CURAND_CHECK(curandSetGeneratorOffset(gpuGen[device], offset));
+  CURAND_CHECK(curandSetGeneratorOffset(gpuGen[device], kGpuRandomOffset));
   CURAND_CHECK(curandSetGeneratorOrdering(gpuGen[device], order));
-  CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(gpuGen[device], seed));
+  CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(gpuGen[device], kGpuRandomSeed));
+}
+
+void resetGPURandomness()
+{
+  // DPF/DCF 的两方 keygen 必须共享同一段随机流，否则合并后的 share 会失配。
+  int device;
+  checkCudaErrors(cudaGetDevice(&device));
+  CURAND_CHECK(curandSetGeneratorOffset(gpuGen[device], kGpuRandomOffset));
+  CURAND_CHECK(curandSetGeneratorOrdering(gpuGen[device], order));
+  CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(gpuGen[device], kGpuRandomSeed));
 }
 
 void destroyGPURandomness()

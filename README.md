@@ -29,35 +29,25 @@ INSTALL_DRIVER=0 ./setup.sh   # 跳过驱动安装
 source .env.cuda
 ```
 
-## 构建
+### 使用 CMake 构建
 
-先设置环境变量：
+在仓库根目录执行：
 
 ```bash
-export CUDA_VERSION=13.1
-export GPU_ARCH=86
+cmake -S . -B build \
+  -DCUDA_VERSION=$CUDA_VERSION \
+  -DGPU_ARCH=$GPU_ARCH
+
+cmake --build build -j
 ```
 
-然后在仓库根目录执行：
+单独运行：
 
 ```bash
-make all
-```
-
-单独编译与运行：
-
-```bash
-make dpf CUDA_VERSION=$CUDA_VERSION GPU_ARCH=$GPU_ARCH
-./dpf
-
-make dcf CUDA_VERSION=$CUDA_VERSION GPU_ARCH=$GPU_ARCH
-./dcf
-
-make dpf_benchmark CUDA_VERSION=$CUDA_VERSION GPU_ARCH=$GPU_ARCH
-./dpf_benchmark 64 10000000
-
-make dcf_benchmark CUDA_VERSION=$CUDA_VERSION GPU_ARCH=$GPU_ARCH
-./dcf_benchmark 64 1 10000000
+./build/dpf
+./build/dcf
+./build/dpf_benchmark 64 10000000
+./build/dcf_benchmark 64 1 10000000
 ```
 
 ## 文件
@@ -68,7 +58,7 @@ make dcf_benchmark CUDA_VERSION=$CUDA_VERSION GPU_ARCH=$GPU_ARCH
 - `dcf.cu`: DCF 最小示例
 - `dcf_benchmark.cu`: DCF 运行时基准测试
 
-- `Makefile`: 当前根目录下的构建入口
+- `CMakeLists.txt`: 当前根目录下的构建入口
 
 - `fss/`: FSS 相关代码
 - `gpu/`: GPU 基础设施代码
@@ -77,22 +67,50 @@ make dcf_benchmark CUDA_VERSION=$CUDA_VERSION GPU_ARCH=$GPU_ARCH
 
 ## Benchmark 字段
 
-`dpf_benchmark`：
+`dpf_benchmark` 实际输出：
+
+```text
+DPF benchmark finished
+  bin: <bin> bit
+  n: <n> elem
+  keygen: <time> us
+  eval_p0: <time> us
+  eval_p1: <time> us
+  transfer_p0: <time> us
+  transfer_p1: <time> us
+  total: <time> us
+```
 
 - `bin`: 输入位宽，单位 `bit`
 - `n`: 批大小，单位 `elem`
+- `keygen`: 生成两方 DPF 密钥耗时，单位 `us`
+- `eval_p0`: `SERVER0` 求值总耗时，单位 `us`
+- `eval_p1`: `SERVER1` 求值总耗时，单位 `us`
+- `transfer_p0`: `SERVER0` 结果拷回主机耗时，单位 `us`
+- `transfer_p1`: `SERVER1` 结果拷回主机耗时，单位 `us`
+- `total`: 整体流程总耗时，单位 `us`
 
-`dcf_benchmark` 
+`dcf_benchmark` 实际输出：
+
+```text
+DCF benchmark finished
+  bin: <bin> bit
+  bout: <bout> bit
+  n: <n> elem
+  keygen: <time> us
+  eval_p0: <time> us
+  eval_p1: <time> us
+  transfer_p0: <time> us
+  transfer_p1: <time> us
+  total: <time> us
+```
 
 - `bin`: 输入位宽，单位 `bit`
 - `bout`: 输出位宽，单位 `bit`
 - `n`: 批大小，单位 `elem`
-
-通用字段：
-
-- `keygen`: 生成两方密钥耗时，单位 `us`
-- `eval_p0`: P0 评估耗时，单位 `us`
-- `eval_p1`: P1 评估耗时，单位 `us`
-- `transfer_p0`: P0 结果拷回主机耗时，单位 `us`
-- `transfer_p1`: P1 结果拷回主机耗时，单位 `us`
-- `total`: 整体流程耗时，单位 `us`
+- `keygen`: 生成两方 DCF 密钥耗时，单位 `us`
+- `eval_p0`: `SERVER0` 求值总耗时，单位 `us`
+- `eval_p1`: `SERVER1` 求值总耗时，单位 `us`
+- `transfer_p0`: `SERVER0` 结果拷回主机耗时，单位 `us`
+- `transfer_p1`: `SERVER1` 结果拷回主机耗时，单位 `us`
+- `total`: 整体流程总耗时，单位 `us`

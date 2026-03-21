@@ -9,6 +9,7 @@ T *randomGEOnGpu(const u64 n, int bw);
 AESBlock *randomAESBlockOnGpu(const int n);
 // 初始化和销毁最小运行链共享的 GPU 随机源。
 void initGPURandomness();
+void resetGPURandomness();
 void destroyGPURandomness();
 
 

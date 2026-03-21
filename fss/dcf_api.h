@@ -25,10 +25,12 @@ namespace standalone
 
         T *d_rin = detail::copyVectorToGpu(rin);
 
+        resetGPURandomness();
         u8 *cursor0 = key0.data();
         dcf::gpuKeyGenDCF(&cursor0, SERVER0, bin, bout, static_cast<int>(rin.size()), d_rin, payload, runtime.aes(), leq);
         key0.setSize(static_cast<std::size_t>(cursor0 - key0.data()));
 
+        resetGPURandomness();
         u8 *cursor1 = key1.data();
         dcf::gpuKeyGenDCF(&cursor1, SERVER1, bin, bout, static_cast<int>(rin.size()), d_rin, payload, runtime.aes(), leq);
         key1.setSize(static_cast<std::size_t>(cursor1 - key1.data()));

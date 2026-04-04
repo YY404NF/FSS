@@ -1,0 +1,6 @@
+[submodule "myl7"]
+	path = myl7
+	url = https://github.com/myl7/fss
+[submodule "libfss"]
+	path = libfss
+	url = https://github.com/frankw2/libfss

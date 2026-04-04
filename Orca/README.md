@@ -1,4 +1,21 @@
-# FSS ( DPF / DCF )
+# Orca ( DPF / DCF )
+
+本代码为论文项目提取出来的DPF/DCF函数，论文性能测试结果：
+
+论文环境：
+
+- Ubuntu 20.04
+- NVIDIA RTX A6000 GPU
+- CUDA 11.7
+- CMake 3.27.2
+- g++-9
+
+参数：bin = 64, bout = 1, n = 10,000,000
+
+| 模式 | Naive | AES | AES+LAYOUT | AES+LAYOUT+MEM |
+| --- | --- | --- | --- | --- |
+| Time (ms) | 3305 | 840 | 716 | 523 |
+| Speedup | - | 3.9× | 4.6× | 6.3× |
 
 ## 依赖
 
